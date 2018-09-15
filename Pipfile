@@ -1,0 +1,20 @@
+[[source]]
+url = 'https://pypi.python.org/simple'
+verify_ssl = true
+name = 'pypi'
+
+[requires]
+python_version = '3.6'
+
+[packages]
+qtox        = {editable = true, path = "."}
+typing      = '*'
+
+[dev-packages]
+qtox-scripts    = { path = "./scripts", editable = true }
+black           = { version = "==18.6b4" }
+coverage        = '*'
+flake8          = '*'
+flake8-bugbear  = '*'
+mypy            = '*'
+pytest          = '*'

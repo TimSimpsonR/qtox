@@ -1,0 +1,29 @@
+{
+    "folders":
+    [
+        {
+            "path": "${project_path:${folder}}/..",
+            "folder_exclude_patterns":
+            [
+                ".tox",
+                "__pycache__"
+            ]
+        },
+    ],
+    "build_systems":
+    [
+        {
+            "file_regex": "(^.*?\\.py)\\:([0-9]*)",
+            "name": "tests-linux",
+            "shell_cmd": "${project_path:${folder}}/.venv/bin/qtox-tests",
+            "working_dir": "${project_path:${folder}}"
+        },
+        {
+            "file_regex": "(^.*?\\.py)\\:([0-9]*)",
+            "name": "tests-windows",
+            "shell_cmd": "${project_path:${folder}}/.venv/Scripts/qtox-tests.exe",
+            "working_dir": "${project_path:${folder}}"
+        }
+    ],
+    "notes": "This requires installing with Pipenv first when the environment variable PIPENV_VENV_IN_PROJECT is set"
+}
