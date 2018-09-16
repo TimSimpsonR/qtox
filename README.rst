@@ -12,19 +12,21 @@ I cloned the `Falcon web API framework <https://github.com/falconry/falcon>`__, 
 
 Following that, here's the output of ``time tox`` took:
 
-::
+.. code-block::
 
     real    1m9.746s
     user    1m18.527s
     sys 0m4.732s
 
+
 I then created a bash script using ``qtox --envs pep8 py27 py36 docs  > retox.sh``. Here's the output of ``time ./retox.sh``:
 
-::
+.. code-block::
 
     real    0m40.326s
     user    1m28.318s
     sys 0m3.717s
+
 
 So ``qtox``'s script ran in 57% the time.
 
@@ -55,12 +57,11 @@ Note: tox needs to run one time before ``qtox`` can be used, in order for qtox t
 
 ``qtox`` can be used to create a bash script like so:
 
-::
+.. code-block:: bash
 
-    ```
     qtox --envs black pep8 mypy py35 p36 > retox.sh
     chmod +x retox.sh
-    ```
+
 
 When this script will instantly launch five jobs in parallel and wait on the results in the order you specified (meaning you want the quicker jobs- such as black or flake8- to run first).
 
