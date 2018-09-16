@@ -83,7 +83,21 @@ def create_bash_script(ini: toxini.Ini, envs: t.List[str]) -> t.List[str]:
         lines.append("}")
         lines.append("")
 
-    lines.append("")
+    lines += [
+        "",
+        "finished=0",
+        "",
+        "function clean_up(){",
+        "    if [ $finished -eq 0 ]; then",
+        "        for pid in ${pids[*]}; do",
+        '            kill "${pid}" &> /dev/null',
+        "        done",
+        "    fi",
+        "}",
+        "",
+        "trap 'clean_up' HUP INT QUIT TERM EXIT",
+        "",
+    ]
 
     for index, _env_name in enumerate(envs):
         lines.append(f'run_env_{index} &> "${{tmpdir}}"/{index} &')
@@ -115,6 +129,7 @@ def create_bash_script(ini: toxini.Ini, envs: t.List[str]) -> t.List[str]:
         "    echo '                          F A I L E D !   :('",
         "fi",
         "",
+        "finished=1",
         "exit $status",
     ]
     return lines
