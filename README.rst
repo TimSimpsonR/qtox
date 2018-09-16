@@ -30,6 +30,20 @@ I then created a bash script using ``qtox --envs pep8 py27 py36 docs  > retox.sh
 
 So ``qtox``'s script ran in 57% the time.
 
+Installing
+----------
+
+``qtox`` is available on PyPi.
+
+If you use `pipsi <https://github.com/mitsuhiko/pipsi>`__ you can install it with:
+
+.. code-block::
+
+    pipsi install qtox
+
+If you're some kind of crazy person who likes polluting your global Python instance you can just call ``pip install qtox`` and I'll try not to judge you.
+
+
 Why you shouldn't call Tox from your dev box
 --------------------------------------------
 
