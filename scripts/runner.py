@@ -13,7 +13,7 @@ def main():
     print('Running Black...', flush=True)
     pytest_args = ' '.join([f"'{arg}'" for arg in sys.argv[1:]])
     result = subprocess.call(
-        f'{black} qtox',
+        f'{black} qtox setup.py',
         shell=True)
     if result:
         return result
