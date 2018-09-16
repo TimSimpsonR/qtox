@@ -61,7 +61,26 @@ def generate_tox_func(env: toxini.Env) -> t.List[str]:
     return lines
 
 
-def create_bash_script(ini: toxini.Ini, envs: t.List[str]) -> t.List[str]:
+def create_single_tox_script(ini: toxini.Ini, envs: t.List[str]) -> t.List[str]:
+    funcs: t.List[t.Tuple[str, t.List[str]]] = []
+
+    for env_name in envs:
+        env = ini.get_env_info(env_name)
+        funcs.append((env_name, generate_tox_func(env)))
+
+    return create_bash_script(funcs)
+
+
+def create_multi_tox_script(envs: t.List[t.Tuple[str, toxini.Env]]) -> t.List[str]:
+    funcs: t.List[t.Tuple[str, t.List[str]]] = []
+
+    for env_name, env in envs:
+        funcs.append((env_name, generate_tox_func(env)))
+
+    return create_bash_script(funcs)
+
+
+def create_bash_script(funcs: t.List[t.Tuple[str, t.List[str]]]) -> t.List[str]:
     tail = "tail"
     if sys.platform == "darwin":
         # OSX has a version of tail that's not too great, so switch to
@@ -71,14 +90,13 @@ def create_bash_script(ini: toxini.Ini, envs: t.List[str]) -> t.List[str]:
     lines: t.List[str] = []
     lines += ["set -euo pipefail", ""]
 
-    for index, env_name in enumerate(envs):
-        env = ini.get_env_info(env_name)
+    for index, func in enumerate(funcs):
+        func_name, func_body = func
         lines.append(f"function run_env_{index}(){{")
         lines.append("    echo '" + ("-" * 52) + "'")
-        lines.append(f"    echo '| {env_name:<48} |'")
+        lines.append(f"    echo '| {func_name:<48} |'")
         lines.append("    echo '" + ("-" * 52) + "'")
-        func_lines = generate_tox_func(env)
-        for l in func_lines:
+        for l in func_body:
             lines.append("    " + l)
         lines.append("}")
         lines.append("")
@@ -101,7 +119,7 @@ def create_bash_script(ini: toxini.Ini, envs: t.List[str]) -> t.List[str]:
         "",
     ]
 
-    for index, _env_name in enumerate(envs):
+    for index, _ in enumerate(funcs):
         lines.append(f'run_env_{index} &> "${{tmpdir}}"/{index} &')
         lines.append(f"pids[{index}]=$!")
         lines.append("")
