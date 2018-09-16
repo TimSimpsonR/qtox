@@ -1,6 +1,7 @@
 import ast
 import pathlib
 import shlex
+import sys
 import typing as t
 import warnings
 
@@ -61,6 +62,12 @@ def generate_tox_func(env: toxini.Env) -> t.List[str]:
 
 
 def create_bash_script(ini: toxini.Ini, envs: t.List[str]) -> t.List[str]:
+    tail = "tail"
+    if sys.platform == "darwin":
+        # OSX has a version of tail that's not too great, so switch to
+        # `gtail` instead, available from GNU coreutils.
+        tail = "gtail"
+
     lines: t.List[str] = []
     lines += ["set -euo pipefail", "", "readonly tmpdir='/tmp'", ""]
 
@@ -91,7 +98,7 @@ def create_bash_script(ini: toxini.Ini, envs: t.List[str]) -> t.List[str]:
         "set +e",
         "for pid in ${pids[*]}; do",
         "    if [ $status -eq 0 ]; then",
-        '        tail -f -n +1 --pid=$pid "${tmpdir}/${index}" &',
+        "        " + tail + ' -f -n +1 --pid=$pid "${tmpdir}/${index}" &',
         "        tail_pid=$!",
         "        wait $pid",
         "        status=$?",

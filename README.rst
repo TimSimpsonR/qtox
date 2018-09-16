@@ -43,6 +43,8 @@ If you use `pipsi <https://github.com/mitsuhiko/pipsi>`__ you can install it wit
 
 If you're some kind of crazy person who likes polluting your global Python instance you can just call ``pip install qtox`` and I'll try not to judge you.
 
+.. note:: The version of tail on OSX doesn't have the ``--pid`` option, so you'll need to install it with ``brew install coreutils``. Scripts generated on osx call ``gtail`` instead of ``tail`` for this reason.
+
 
 Why you shouldn't call Tox from your dev box
 --------------------------------------------
