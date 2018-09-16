@@ -12,7 +12,7 @@ except BaseException:
 
 setuptools.setup(
     name="qtox",
-    version="0.0.7",
+    version="0.0.8",
     author="Tim Simpson",
     description="Lets you re-run Tox commands faster and in parallel.",
     long_description=long_description,
