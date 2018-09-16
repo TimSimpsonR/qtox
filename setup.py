@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name="qtox",
-    version="0.0.3",
+    version="0.0.4",
     author="Tim Simpson",
     description="Lets you re-run Tox commands faster and in parallel.",
     packages=setuptools.find_packages(exclude=["tests"]),
