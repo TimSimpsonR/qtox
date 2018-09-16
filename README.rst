@@ -19,7 +19,7 @@ Following that, here's the output of ``time tox`` took:
     sys 0m4.732s
 
 
-I then created a bash script using ``qtox --envs pep8 py27 py36 docs  > retox.sh``. Here's the output of ``time ./retox.sh``:
+I then created a bash script using ``qtox -e pep8 py27 py36 docs  > retox.sh``. Here's the output of ``time ./retox.sh``:
 
 .. code-block::
 
@@ -75,7 +75,7 @@ Note: tox needs to run one time before ``qtox`` can be used, in order for qtox t
 
 .. code-block:: bash
 
-    qtox --envs black pep8 mypy py35 p36 > retox.sh
+    qtox -e black pep8 mypy py35 p36 > retox.sh
     chmod +x retox.sh
 
 
@@ -88,3 +88,28 @@ It does this by having every job redirect to a file. When it's time to consume t
 If a job fails, all other subsequent jobs are simply killed without printing out their output. This keeps things simpler so you don't have to scroll back up to see what went wrong.
 
 It's up to you to make sure the simpler jobs are put earlier in the list you give to ``qtox``. If you instead put the longer running jobs first, you'll have to wait for them to finish before seeing feedback from quicker tools such as flake8.
+
+Multi Tox Super Projects
+------------------------
+
+``qtox`` also supports creating bash scripts for multiple tox projects.
+
+Use the ``-c`` flag to specify a tox directory, then use ``-e`` like normal.
+
+Say you have two directories containing two Python projects, both using tox. One is called ``acme-lib``, and is a reusable library containing core business logic, while the other is ``acme-rest-api``, which uses ``acme-lib``. If you're working on both at the same time, you may want to simply run all of the Tox tests together, starting with Flake 8 and MyPy tests first.
+
+Generating a bash script for that would look something like this:
+
+.. code-block:: bash
+
+    qtox -c acme-lib -e pep8 mypy -c acme-rest-api -e pep8 mypy -c acme-lib -e pytest -c acme-rest-api -e pytest > retox.sh
+    chmod +x ./retox.sh
+
+The tasks that will be waited on / shown the progress for will be in this order:
+
+    * acme-lib's pep8 and mypy checks
+    * acme-rest-api's pep8 and mypy checks
+    * acme-lib's pytest tests
+    * acme-rest-api's pytest tests
+
+To beat a dead horse, I'll reiterate that all of these tasks will start simultaneously, meaning the relatively expensive REST API unit tests will start running at the same time as everything else. The simpler checks will simply be waited on first.
