@@ -2,6 +2,7 @@ import ast
 import pathlib
 import shlex
 import typing as t
+import warnings
 
 from . import toxini
 
@@ -32,8 +33,11 @@ def generate_tox_func(env: toxini.Env) -> t.List[str]:
         if "setenv" in env and env["setenv"].startswith("SetenvDict: "):
             sed = ast.literal_eval(env["setenv"][12:])
             for k, v in sed.items():
-                v = v.format(**env)
-                lines.append(shlex.quote(k) + "='" + shlex.quote(v) + "' \\")
+                try:
+                    v = v.format(**env)
+                    lines.append(shlex.quote(k) + "='" + shlex.quote(v) + "' \\")
+                except KeyError:
+                    warnings.warn("TODO: handle complex environment variables", Warning)
 
         bin_command = bindir / command[0]
         if not bin_command.exists():
