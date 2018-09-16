@@ -69,7 +69,7 @@ def create_bash_script(ini: toxini.Ini, envs: t.List[str]) -> t.List[str]:
         tail = "gtail"
 
     lines: t.List[str] = []
-    lines += ["set -euo pipefail", "", "readonly tmpdir='/tmp'", ""]
+    lines += ["set -euo pipefail", ""]
 
     for index, env_name in enumerate(envs):
         env = ini.get_env_info(env_name)
@@ -84,6 +84,7 @@ def create_bash_script(ini: toxini.Ini, envs: t.List[str]) -> t.List[str]:
         lines.append("")
 
     lines += [
+        "readonly tmpdir=`mktemp -d`",
         "",
         "finished=0",
         "",
@@ -93,6 +94,7 @@ def create_bash_script(ini: toxini.Ini, envs: t.List[str]) -> t.List[str]:
         '            kill "${pid}" &> /dev/null',
         "        done",
         "    fi",
+        '    rm -r "${tmpdir}" &> /dev/null || true',
         "}",
         "",
         "trap 'clean_up' HUP INT QUIT TERM EXIT",
