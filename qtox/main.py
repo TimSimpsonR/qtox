@@ -1,8 +1,11 @@
 import enum
+import os
+import pathlib
 import sys
 import typing as t
 
 from . import bash
+from . import options
 from . import toxini
 
 
@@ -33,15 +36,16 @@ Create a bash script to run six environments across two tox files:
 class ParseMode(enum.Enum):
     C = "c"
     ENV = "e"
+    ROOT = "r"
     NONE = None
 
 
-def parse_cmds(args: t.List[str]) -> t.Optional[t.List[t.Tuple[t.Optional[str], str]]]:
+def parse_cmds(args: t.List[str]) -> t.Optional[options.Options]:
     """Parses arguments, returns list of tox directory, environment pairs."""
+    root_directory: t.Optional[pathlib.Path] = None
+    envs: t.List[options.ToxEnv] = []
 
-    results: t.List[t.Tuple[t.Optional[str], str]] = []
-
-    tox_dir: t.Optional[str] = None
+    tox_dir: t.Optional[pathlib.Path] = None
 
     current_mode = ParseMode.NONE
 
@@ -53,48 +57,70 @@ def parse_cmds(args: t.List[str]) -> t.Optional[t.List[t.Tuple[t.Optional[str], 
             elif arg == "-e":
                 current_mode = ParseMode.ENV
                 continue
+            elif arg == "-r":
+                current_mode = ParseMode.ROOT
+                continue
             else:
                 print(f"Agument {index} was not expected: {arg}")
                 print(USAGE)
                 return None
         else:
             if current_mode == ParseMode.C:
-                tox_dir = arg
+                tox_dir = pathlib.Path(arg)
             elif current_mode == ParseMode.ENV:
-                results.append((tox_dir, arg))
+                envs.append(options.ToxEnv(tox_dir, arg))
+            elif current_mode == ParseMode.ROOT:
+                root_directory = pathlib.Path(arg)
             else:
                 print("Error: expected `-c` or `-e`.")
                 print(USAGE)
                 return None
 
-    if not results:
+    if not envs:
         print(USAGE)
         return None
 
-    return results
+    if root_directory is None:
+        root_directory = pathlib.Path.cwd()
+
+    root_directory = root_directory.resolve()
+
+    # Change all paths to be relative to the desired root directory
+    # In their infinite wisdom, the Python gods haven't put an equivalent of
+    # "relpath" into the new pathlib. (??)
+    new_envs = [
+        options.ToxEnv(
+            pathlib.Path(os.path.relpath(str(env.tox_dir), str(root_directory))),
+            env.env,
+        )
+        for env in envs
+    ]
+    return options.Options(root_directory, new_envs)
 
 
 def main() -> None:
-    args = parse_cmds(sys.argv[1:])
-    if not args:
+    options = parse_cmds(sys.argv[1:])
+    if not options:
         sys.exit(1)
 
     tox_inis: t.Dict[t.Optional[str], toxini.Ini] = {}
 
-    def get_ini(c: t.Optional[str]) -> toxini.Ini:
+    def get_ini(c: t.Optional[pathlib.Path]) -> toxini.Ini:
+        assert options
+        key = str(c) if c else None
         if c not in tox_inis:
-            tox_inis[c] = toxini.get_ini(c)
+            tox_inis[key] = toxini.get_ini(options.root, c)
 
-        return tox_inis[c]
+        return tox_inis[key]
 
     envs: t.List[t.Tuple[str, toxini.Env]] = []
-    for arg in args:
-        tox_ini = get_ini(arg[0])
-        env = tox_ini.get_env_info(arg[1])
-        if arg[0]:
-            name = f"{arg[0]} -> {arg[1]}"
+    for op_env in options.envs:
+        tox_ini = get_ini(op_env.tox_dir)
+        env = tox_ini.get_env_info(op_env.env)
+        if op_env.tox_dir:
+            name = f"{op_env.tox_dir} -> {op_env.env}"
         else:
-            name = arg[1]
+            name = op_env.env
         envs.append((name, env))
 
     lines = bash.create_multi_tox_script(envs)

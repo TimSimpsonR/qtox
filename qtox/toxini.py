@@ -1,4 +1,5 @@
 import configparser
+import pathlib
 import subprocess
 import typing as t
 
@@ -6,13 +7,15 @@ import typing as t
 Env = t.NewType("Env", dict)
 
 
-def _run_tox_showconfig(tox_dir: t.Optional[str]) -> str:
+def _run_tox_showconfig(
+    root_directory: pathlib.Path, tox_dir: t.Optional[pathlib.Path]
+) -> str:
     cmd = ["tox"]
     if tox_dir:
-        cmd.extend(["-c", tox_dir])
+        cmd.extend(["-c", str(tox_dir)])
 
     cmd.extend(["--showconfig"])
-    output = subprocess.check_output(cmd)
+    output = subprocess.check_output(cmd, cwd=root_directory)
     return output.decode("utf-8")
 
 
@@ -41,8 +44,8 @@ class Ini:
         return self._config.get(section="_top_", option="toxinidir")
 
 
-def get_ini(tox_dir: t.Optional[str]) -> Ini:
-    content = _run_tox_showconfig(tox_dir)
+def get_ini(root_directory: pathlib.Path, tox_dir: t.Optional[pathlib.Path]) -> Ini:
+    content = _run_tox_showconfig(root_directory, tox_dir)
     # Add section headers so the INI parser will work
     fake_content = f"[_top_]\n{content}"
     return Ini(fake_content)
