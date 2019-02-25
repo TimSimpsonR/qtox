@@ -10,7 +10,7 @@ from . import toxini
 
 def generate_tox_func(env: toxini.Env) -> t.List[str]:
     """Given a tox env dictionary, returns bash code to run."""
-    envdir = pathlib.Path(env["envdir"])
+    envdir = pathlib.Path(env.settings["envdir"])
     if not envdir.exists():
         raise RuntimeError(
             f"Can't generate env: path {envdir} does not exist."
@@ -19,20 +19,23 @@ def generate_tox_func(env: toxini.Env) -> t.List[str]:
         )
 
     bindir = envdir / "bin"
-    whitelist_externals: t.List[str] = ast.literal_eval(env["whitelist_externals"])
-    commands: t.List[t.List[str]] = ast.literal_eval(env["commands"])
-    changedir: t.Optional[pathlib.Path] = None if not env[
-        "changedir"
-    ] else pathlib.Path(env["changedir"])
+    whitelist_externals: t.List[str] = ast.literal_eval(
+        env.settings["whitelist_externals"]
+    )
+    commands: t.List[t.List[str]] = ast.literal_eval(env.settings["commands"])
+
+    if "changedir" in env.settings and env.settings["changedir"] != str(env.cwd):
+        warnings.warn("TODO: Can't handle changedir in toxini.")
 
     lines: t.List[str] = []
 
-    if changedir:
-        lines.append(f"pushd {changedir}")
+    lines.append(f"pushd {env.cwd}")
 
     for command in commands:
-        if "setenv" in env and env["setenv"].startswith("SetenvDict: "):
-            setenv = ast.literal_eval(env["setenv"][12:])
+        if "setenv" in env.settings and env.settings["setenv"].startswith(
+            "SetenvDict: "
+        ):
+            setenv = ast.literal_eval(env.settings["setenv"][12:])
 
             # Find all instances of environment variables set from actual
             # environment variables. An example would be:
@@ -53,7 +56,7 @@ def generate_tox_func(env: toxini.Env) -> t.List[str]:
 
             for k, v in items.items():
                 try:
-                    v = v.format(**env).replace("$<<", "${").replace(">>", "}")
+                    v = v.format(**env.settings).replace("$<<", "${").replace(">>", "}")
                     lines.append(shlex.quote(k) + "=" + shlex.quote(v) + " \\")
                 except KeyError:
                     warnings.warn("TODO: handle complex environment variables", Warning)
@@ -74,8 +77,7 @@ def generate_tox_func(env: toxini.Env) -> t.List[str]:
         lines.append(" ".join(command_line))
         lines.append("")
 
-    if changedir:
-        lines.append("popd")
+    lines.append("popd")
 
     return lines
 

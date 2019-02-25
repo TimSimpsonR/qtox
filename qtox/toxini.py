@@ -4,9 +4,6 @@ import subprocess
 import typing as t
 
 
-Env = t.NewType("Env", dict)
-
-
 def _run_tox_showconfig(
     root_directory: pathlib.Path, tox_dir: t.Optional[pathlib.Path]
 ) -> str:
@@ -19,10 +16,23 @@ def _run_tox_showconfig(
     return output.decode("utf-8")
 
 
+class Env:
+    def __init__(
+        self, cwd: pathlib.Path, tox_dir: t.Optional[pathlib.Path], settings: dict
+    ) -> None:
+        self.cwd = cwd
+        self.tox_dir = tox_dir
+        self.settings = settings
+
+
 class Ini:
-    def __init__(self, content: str) -> None:
+    def __init__(
+        self, cwd: pathlib.Path, tox_dir: t.Optional[pathlib.Path], content: str
+    ) -> None:
         self._config = configparser.RawConfigParser()
         self._config.read_string(content)
+        self._cwd = cwd
+        self._tox_dir = tox_dir
 
     def get_env_info(self, name: str) -> Env:
         result = {k: v for k, v in self._config.items("_top_")}
@@ -35,7 +45,7 @@ class Ini:
             for k, v in items:
                 result[k] = v
 
-            return Env(result)
+            return Env(self._cwd, self._tox_dir, result)
 
         raise ValueError(f"Could not find tox env {name}")
 
@@ -44,8 +54,8 @@ class Ini:
         return self._config.get(section="_top_", option="toxinidir")
 
 
-def get_ini(root_directory: pathlib.Path, tox_dir: t.Optional[pathlib.Path]) -> Ini:
-    content = _run_tox_showconfig(root_directory, tox_dir)
+def get_ini(cwd: pathlib.Path, tox_dir: t.Optional[pathlib.Path]) -> Ini:
+    content = _run_tox_showconfig(cwd, tox_dir)
     # Add section headers so the INI parser will work
     fake_content = f"[_top_]\n{content}"
-    return Ini(fake_content)
+    return Ini(cwd, tox_dir, fake_content)
