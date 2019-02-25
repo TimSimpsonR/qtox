@@ -32,13 +32,32 @@ def generate_tox_func(env: toxini.Env) -> t.List[str]:
 
     for command in commands:
         if "setenv" in env and env["setenv"].startswith("SetenvDict: "):
-            sed = ast.literal_eval(env["setenv"][12:])
-            for k, v in sed.items():
+            setenv = ast.literal_eval(env["setenv"][12:])
+
+            # Find all instances of environment variables set from actual
+            # environment variables. An example would be:
+            #     setenv =
+            #         BLACK_ARGS={env:BLACK_ARGS:}
+            items = {}
+            for k in list(setenv.keys()):
+                if setenv[k].startswith("{env:") and setenv[k].endswith(":}"):
+                    env_var_name = setenv[k][5:-2]
+                    if k == env_var_name:
+                        # The result would be something like:
+                        # BLACK_ARGS="${BLACK_ARGS}"; ignore
+                        pass
+                    else:
+                        items[k] = '"$<<' + env_var_name + '>>"'
+                else:
+                    items[k] = setenv[k]
+
+            for k, v in items.items():
                 try:
-                    v = v.format(**env)
-                    lines.append(shlex.quote(k) + "='" + shlex.quote(v) + "' \\")
+                    v = v.format(**env).replace("$<<", "${").replace(">>", "}")
+                    lines.append(shlex.quote(k) + "=" + shlex.quote(v) + " \\")
                 except KeyError:
                     warnings.warn("TODO: handle complex environment variables", Warning)
+                    sys.exit(1)
 
         bin_command = bindir / command[0]
         if not bin_command.exists():
