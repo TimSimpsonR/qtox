@@ -20,10 +20,16 @@ class Env:
     def __init__(
         self, cwd: pathlib.Path, tox_dir: t.Optional[pathlib.Path], settings: dict
     ) -> None:
-        self.cwd = cwd
+        self._cwd = cwd
         self.tox_dir = tox_dir
         self.settings = settings
 
+    @property
+    def cwd(self) -> str:
+        if 'changedir' in self.settings:
+            return self.settings['changedir']
+        else:
+            return self._cwd
 
 class Ini:
     def __init__(
