@@ -36,6 +36,8 @@ class Ini:
 
     def get_env_info(self, name: str) -> Env:
         result = {k: v for k, v in self._config.items("_top_")}
+        if self._tox_dir:
+            result['toxinidir'] = self._tox_dir.absolute()
         for section in [name, f"testenv:{name}"]:
             try:
                 items = self._config.items(section)
